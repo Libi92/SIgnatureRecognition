@@ -1,8 +1,17 @@
 import numpy
 from PIL import Image
+from ffnet import mlgraph, ffnet
 from scipy import ndimage
 import matplotlib.pyplot as plt
 from scipy import misc
+from scipy.stats import stats
+
+
+def showImage(img, savePath=None):
+    if savePath:
+        misc.imsave(savePath, img)
+    plt.imshow(img)
+    plt.show()
 
 
 def convertGrayscale(img):
@@ -19,10 +28,7 @@ def scaleImage(img):
 
 def denoiseImage(img):
     med_denoised = ndimage.median_filter(img, 2)
-
-    misc.imsave('denoised.png', med_denoised)
-    plt.imshow(med_denoised)
-    plt.show()
+    showImage(med_denoised, 'denoised.png')
     return med_denoised
 
 
@@ -36,9 +42,7 @@ def backgroundEliminate(img):
             else:
                 imgBackgroundEliminated[i, j] = 255
 
-    misc.imsave('background_eliminated.png', imgBackgroundEliminated)
-    plt.imshow(imgBackgroundEliminated)
-    plt.show()
+    showImage(imgBackgroundEliminated, 'background_eliminated.png')
     return imgBackgroundEliminated
 
 
@@ -63,18 +67,13 @@ def normalizeImage(img):
     print minX, minY, maxX, maxY
 
     imNormal = img[minY:maxY, minX:maxX]
-
-    misc.imsave('normalized.png', imNormal)
-    plt.imshow(imNormal)
-    plt.show()
+    showImage(imNormal, 'normalized.png')
     return imNormal
 
 
-def thinImage(img):
-    imThin = zhangSuen_vec(img, 100)
-    misc.imsave('thinned.png', imThin)
-    plt.imshow(imThin)
-    plt.show()
+def thinImage(img, iterations=100):
+    imThin = zhangSuen_vec(img, iterations)
+    showImage(imThin, 'thinned.png')
     return imThin
 
 
@@ -115,23 +114,114 @@ def zhangSuen_vec(image, iterations):
     return image
 
 
+def getDensityOfImage(img):
+    nonZeroPixels = 0
+    for row in img:
+        for pixel in row:
+            if pixel != 0:
+                nonZeroPixels += 1
+    density = nonZeroPixels / float(len(img) * len(row))
+    return density
+
+
+def getWidthToHeightRatio(img):
+    width = len(img)
+    height = len(img[0])
+    return width / float(height)
+
+
+def getSlope(img):
+    xMax = len(img) - 1
+    yMax = len(img[0]) - 1
+
+    y2 = yMax
+    for j in reversed(range(yMax)):
+        if img[xMax, j] == 0:
+            y2 = j
+            break
+
+    x2 = xMax
+    for i in reversed(range(xMax)):
+        if img[i, yMax] == 0:
+            x2 = i
+
+    print (x2, y2)
+    slope = y2/float(x2)
+    return slope
+
+
+def train(trainData):
+    print('Starting Training')
+    inLength = 64
+    numImages = len(images)
+
+    inData = []
+    for i in range(len(trainData)):
+        row = []
+        for j in range(inLength):
+            row.append(trainData[i][j])
+        inData.append(row)
+
+    conec = mlgraph((inLength, 10, 10, inLength))
+    net = ffnet(conec)
+    input = numpy.array(inData)
+    target = numpy.array(inData)
+    net.train_tnc(input, target, maxfun=2000, messages=1)
+    print('Training completed')
+
+
 if __name__ == '__main__':
-    img = Image.open('data/Signature2602e.jpg')
+    images = ['data/paul.jpg', 'data/johns.jpg', 'data/edward.png']
+    trainData = []
+    for image in images:
+        img = Image.open(image)
 
-    # Grayscale convertion
-    imgBW = convertGrayscale(img)
+        # Grayscale convertion
+        imgBW = convertGrayscale(img)
 
-    # Scaling to 100x100
-    imgResize = scaleImage(imgBW)
+        # Scaling to 100x100
+        imgResize = scaleImage(imgBW)
 
-    # Denoising using median filtering
-    imgDenoised = denoiseImage(imgResize)
+        # Denoising using median filtering
+        imgDenoised = denoiseImage(imgResize)
 
-    # Background elimination
-    imgBackgroundEliminated = backgroundEliminate(imgDenoised)
+        # Background elimination
+        imgBackgroundEliminated = backgroundEliminate(imgDenoised)
 
-    # Signature Normalization
-    imgNormal = normalizeImage(imgBackgroundEliminated)
+        # Signature Normalization
+        imgNormal = normalizeImage(imgBackgroundEliminated)
 
-    # Thinning Image
-    imgThin = thinImage(imgNormal)
+        # Thinning Image
+        imgThin = thinImage(imgNormal, 300)
+
+        # Feature extraction
+        #
+        # Global Feature
+
+        # Density feature
+        density = getDensityOfImage(imgThin)
+        print('Density ', density)
+
+        # Width to height ratio
+        widthHeightRatio = getWidthToHeightRatio(imgThin)
+        print ('Width to height ratio', widthHeightRatio)
+
+        # Slope feature
+        slope = getSlope(imgThin)
+        print ('Slope', slope)
+
+        # Skew feature
+        skew = stats.skew(imgThin)
+        print('Skew', skew)
+
+        # Constructing train data
+        pattern = []
+        pattern.append(density)
+        pattern.append(widthHeightRatio)
+        pattern.append(slope)
+        pattern.extend(skew)
+
+        trainData.append(pattern)
+
+    # Training
+    train(trainData)

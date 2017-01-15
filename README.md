@@ -2,5 +2,5 @@
 
 This is a research project in python for human signature recognition using Artificial neural networks.
 
-Image thinning using Zhang-Suen thinning algorithm
-https://github.com/yati-sagade/zhang-suen-thinning
+Feed Forward Artificial Neural Network with Back Propagation,
+http://ffnet.sourceforge.net/install.html
