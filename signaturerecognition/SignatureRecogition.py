@@ -10,19 +10,19 @@ from scipy.stats import stats
 def showImage(img, savePath=None):
     if savePath:
         misc.imsave(savePath, img)
-    plt.imshow(img)
-    plt.show()
+    # plt.imshow(img)
+    # plt.show()
 
 
 def convertGrayscale(img):
     imgBW = img.convert('L')
-    imgBW.show()
+    # imgBW.show()
     return imgBW
 
 
 def scaleImage(img):
     imgResize = img.resize((100, 100))
-    imgResize.show()
+    # imgResize.show()
     return imgResize
 
 
@@ -115,45 +115,53 @@ def zhangSuen_vec(image, iterations):
 
 
 def getDensityOfImage(img):
-    nonZeroPixels = 0
-    for row in img:
-        for pixel in row:
-            if pixel != 0:
-                nonZeroPixels += 1
-    density = nonZeroPixels / float(len(img) * len(row))
-    return density
+    try:
+        nonZeroPixels = 0
+        for row in img:
+            for pixel in row:
+                if pixel != 0:
+                    nonZeroPixels += 1
+        density = nonZeroPixels / float(len(img) * len(row))
+        return density
+    except Exception:
+        return 0
 
 
 def getWidthToHeightRatio(img):
-    width = len(img)
-    height = len(img[0])
-    return width / float(height)
+    try:
+        width = len(img)
+        height = len(img[0])
+        return width / float(height)
+    except Exception:
+        return 0
 
 
 def getSlope(img):
-    xMax = len(img) - 1
-    yMax = len(img[0]) - 1
+    try:
+        xMax = len(img) - 1
+        yMax = len(img[0]) - 1
 
-    y2 = yMax
-    for j in reversed(range(yMax)):
-        if img[xMax, j] == 0:
-            y2 = j
-            break
+        y2 = yMax
+        for j in reversed(range(yMax)):
+            if img[xMax, j] == 0:
+                y2 = j
+                break
 
-    x2 = xMax
-    for i in reversed(range(xMax)):
-        if img[i, yMax] == 0:
-            x2 = i
+        x2 = xMax
+        for i in reversed(range(xMax)):
+            if img[i, yMax] == 0:
+                x2 = i
 
-    print (x2, y2)
-    slope = y2/float(x2)
-    return slope
+        print (x2, y2)
+        slope = y2/float(x2)
+        return slope
+    except Exception:
+        return 0
 
 
 def train(trainData):
     print('Starting Training')
     inLength = 64
-    numImages = len(images)
 
     inData = []
     for i in range(len(trainData)):
@@ -170,8 +178,7 @@ def train(trainData):
     print('Training completed')
 
 
-if __name__ == '__main__':
-    images = ['data/paul.jpg', 'data/johns.jpg', 'data/edward.png']
+def startApplication(images):
     trainData = []
     for image in images:
         img = Image.open(image)
@@ -225,3 +232,8 @@ if __name__ == '__main__':
 
     # Training
     train(trainData)
+
+
+if __name__ == '__main__':
+    images = ['data/paul.jpg', 'data/johns.jpg', 'data/edward.png']
+    startApplication(images)
