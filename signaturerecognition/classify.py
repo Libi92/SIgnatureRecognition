@@ -95,12 +95,13 @@ def test_image(img_path):
     fv = utils.calculateGloablFeatureVector(img)
     for (dirpath, dirnames, filenames) in os.walk(normalized_):
         for file_name in filenames:
-            file = open(os.path.join(dirpath, file_name), 'r')
-            content = file.read()
-            file.close()
-            gmfv = json.loads(content)
-            distance = feature_space_distance(gmfv, fv)
-            print (file_name, distance)
-            dist.append(distance)
+            if '.DS_Store' not in file_name:
+                file = open(os.path.join(dirpath, file_name), 'r')
+                content = file.read()
+                file.close()
+                gmfv = json.loads(content)
+                distance = feature_space_distance(gmfv, fv)
+                print (file_name, distance)
+                dist.append(distance)
 
     return dist
